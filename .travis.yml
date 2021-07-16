@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t nishchay/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true nishchay/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t nishchay/multi-client ./client
+  - docker build -t nishchay/multi-nginx ./nginx
+  - docker build -t nishchay/multi-worker ./worker
+  - docker build -t nishchay/multi-server ./server
+  # login to docker cli
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # take images and push them to docker hub
+  - docker push nishchay/multi-client
+  - docker push nishchay/multi-nginx
+  - docker push nishchay/multi-server
+  - docker push nishchay/multi-worker
